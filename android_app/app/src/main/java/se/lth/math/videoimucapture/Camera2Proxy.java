@@ -20,6 +20,7 @@ import android.hardware.camera2.params.OisSample;
 import android.hardware.camera2.params.OutputConfiguration;
 import android.hardware.camera2.params.SessionConfiguration;
 import android.hardware.camera2.params.StreamConfigurationMap;
+import android.media.Image;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -33,10 +34,13 @@ import android.util.Size;
 import android.view.Surface;
 import android.media.ImageReader;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 
 import static java.lang.Math.abs;
+
+import com.google.protobuf.ByteString;
 
 public class Camera2Proxy {
 
@@ -295,6 +299,28 @@ public class Camera2Proxy {
                         mExposureTriggered |= (result.get(CaptureResult.CONTROL_AE_STATE) == CaptureResult.CONTROL_AE_STATE_SEARCHING);
                     }
 
+                    Image yuv = mPreviewReader.acquireLatestImage();
+                    ByteBuffer yuvOutData = null;
+
+                    if (yuv != null) {
+                        Image.Plane yuvPlane = yuv.getPlanes()[0];
+                        ByteBuffer yuvInData = yuvPlane.getBuffer();
+                        int pixelStride = yuvPlane.getPixelStride();
+                        int rowStride = yuvPlane.getRowStride();
+                        int height = yuv.getHeight();
+                        int width = yuv.getWidth();
+
+                        yuvOutData = ByteBuffer.allocate(width * height);
+                        byte[] tmp = new byte[width];
+
+                        for (int i = 0; i < height; ++i) {
+                            int destOffset = i * pixelStride;
+                            int srcOffset = (i * pixelStride) * rowStride;
+                            yuvInData.get(tmp, srcOffset, width);
+                            yuvOutData.put(tmp, destOffset, width);
+                        }
+                    }
+
                     if (mFocusTriggered) {
                         //Log.d(TAG, "Focus state:" + result.get(CaptureResult.CONTROL_AF_STATE));
                         // We are handling auto-focus, cancel if focused to go back inactive state.
@@ -367,7 +393,7 @@ public class Camera2Proxy {
                     Float focal_length_pix = mFocalLengthHelper.getFocalLengthPixel();
 
                     if (mRecordingMetadata) {
-                        writeCaptureData(result, focal_length_pix);
+                        writeCaptureData(result, focal_length_pix, yuvOutData);
                     }
                     ((CameraCaptureActivity) mActivity).getmCameraCaptureFragment()
                             .updateCaptureResultPanel(focal_length_pix, exposureTimeNs);
@@ -510,7 +536,7 @@ public class Camera2Proxy {
 
     }
 
-    private void writeCaptureData(CaptureResult result, Float focal_length_pix) {
+    private void writeCaptureData(CaptureResult result, Float focal_length_pix, ByteBuffer yuvOutData) {
         RecordingProtos.VideoFrameMetaData.Builder frameBuilder = RecordingProtos.VideoFrameMetaData.newBuilder()
                 .setTimeNs(result.get(CaptureResult.SENSOR_TIMESTAMP))
                 .setFocalLengthMm(result.get(CaptureResult.LENS_FOCAL_LENGTH))
@@ -561,11 +587,16 @@ public class Camera2Proxy {
             }
         }
 
+        if (yuvOutData != null) {
+            frameBuilder.setYuvPlane(ByteString.copyFrom(yuvOutData));
+        }
+
         mRecordingWriter.queueData(frameBuilder.build());
 
     }
 
-    private void logAnalyticsConfig() {
+    private void logAnalyticsConfig()                             byte[] tmp = new byte[width];
+{
         Context context = mActivity;
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         int versionCode = BuildConfig.VERSION_CODE;
