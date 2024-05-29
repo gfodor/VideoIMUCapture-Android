@@ -188,9 +188,10 @@ public class Camera2Proxy {
 
             // Set control elements, we want auto white balance
             mPreviewRequestBuilder.set(
-                    CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+                    CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_OFF);
             mPreviewRequestBuilder.set(
                     CaptureRequest.CONTROL_AWB_MODE, CameraMetadata.CONTROL_AWB_MODE_AUTO);
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
 
             mCameraSettingsManager.updateRequestBuilder(mPreviewRequestBuilder);
 
@@ -321,6 +322,21 @@ public class Camera2Proxy {
                                 e.printStackTrace();
                             }
 
+                        }
+                    }
+
+                    if (mCameraSettingsManager.exposureMs < 1000.0f) {
+                        mCameraSettingsManager.exposureMs *= 1.025f;
+
+                        mPreviewRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, (long) (mCameraSettingsManager.exposureMs * 1e6));
+                        mPreviewRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, 3200);
+
+                        try {
+                            mCaptureSession.setRepeatingRequest(
+                                    mPreviewRequestBuilder.build(),
+                                    mSessionCaptureCallback, mBackgroundHandler);
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
                         }
                     }
 

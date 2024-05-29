@@ -38,6 +38,8 @@ public class CameraSettingsManager {
     private Map<Setting, CameraSetting> mCameraSettings;
     private boolean mInitialized = false;
 
+    public float exposureMs = 1/3200.0f;
+
     public CameraSettingsManager(Activity activity) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(activity);
         CameraSetting.setSharedPreferences(preferences);
@@ -69,6 +71,7 @@ public class CameraSettingsManager {
         if (mInitialized) {
             return;
         }
+
         mCameraSettings.put(Setting.OIS,
                 new CameraSettingBoolean(
                         "ois",
