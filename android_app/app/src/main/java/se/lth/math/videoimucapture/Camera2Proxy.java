@@ -35,9 +35,12 @@ import android.util.Size;
 import android.view.Surface;
 import android.media.ImageReader;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.zip.GZIPOutputStream;
 
 import static java.lang.Math.abs;
 
@@ -383,21 +386,15 @@ public class Camera2Proxy {
                         }
                     }
 
-                    if (mCameraSettingsManager.exposureMs < 1000.0f) {
-                        mPreviewRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, (long) (33.0 * 1e6));
+                    if (mCameraSettingsManager.exposureCalibrate()) {
+                        mCameraSettingsManager.updateRequestBuilder(mPreviewRequestBuilder);
 
-                        //mCameraSettingsManager.exposureMs *= 1.015f;
-
-                        //mPreviewRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, (long) (mCameraSettingsManager.exposureMs * 1e6));
-                        mPreviewRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, 200);
-
-                        //try {
-                        //    mCaptureSession.setRepeatingRequest(
-                        //            mPreviewRequestBuilder.build(),
-                        //            mSessionCaptureCallback, mBackgroundHandler);
-                        //} catch (CameraAccessException e) {
-                        //    e.printStackTrace();
-                        //}
+                        try {
+                            mCaptureSession.setRepeatingRequest(
+                                    mPreviewRequestBuilder.build(), mSessionCaptureCallback, mBackgroundHandler);
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
+                        }
                     }
 
                     Long exposureTimeNs = result.get(CaptureResult.SENSOR_EXPOSURE_TIME);
@@ -555,7 +552,6 @@ public class Camera2Proxy {
         mRecordingWriter.queueData(metaBuilder.build());
 
     }
-
     private void writeCaptureData(CaptureResult result, Float focal_length_pix, ByteBuffer yuvOutData) {
         RecordingProtos.VideoFrameMetaData.Builder frameBuilder = RecordingProtos.VideoFrameMetaData.newBuilder()
                 .setTimeNs(result.get(CaptureResult.SENSOR_TIMESTAMP))

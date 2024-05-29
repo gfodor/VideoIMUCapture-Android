@@ -8,6 +8,7 @@
         <item>Continuous</item>
         <item>Fix on Touch</item>
         <item>Manual</item>
+        <item>Calibration</item>
     </string-array>
 
 </resources>

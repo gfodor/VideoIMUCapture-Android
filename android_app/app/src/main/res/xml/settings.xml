@@ -18,6 +18,12 @@
             app:summary="Only show resolutions that use full sensor array area."
             app:persistent="false"/>
 
+        <CheckBoxPreference
+            app:key="save_yuv"
+            app:title="Save YUV plane"
+            app:summary="Write the YUV plane into the outputs (large but lossless)"
+            app:persistent="true"/>
+
         <ListPreference
             app:key="video_size"
             app:title="Video Size"

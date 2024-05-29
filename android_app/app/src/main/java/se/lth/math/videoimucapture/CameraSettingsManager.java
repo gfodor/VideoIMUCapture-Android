@@ -34,11 +34,9 @@ import java.util.stream.Collectors;
 
 
 public class CameraSettingsManager {
-    private enum Setting {OIS, OIS_DATA, DVS, DISTORTION_CORRECTION, VIDEO_SIZE, FOCUS_MODE, EXPOSURE_MODE, ZOOM_RATIO, PHYSICAL_CAMERA};
+    private enum Setting {OIS, OIS_DATA, DVS, DISTORTION_CORRECTION, VIDEO_SIZE, FOCUS_MODE, EXPOSURE_MODE, ZOOM_RATIO, PHYSICAL_CAMERA, PHOTOMETRIC_CALIBRATION};
     private Map<Setting, CameraSetting> mCameraSettings;
     private boolean mInitialized = false;
-
-    public float exposureMs = 1/3200.0f;
 
     public CameraSettingsManager(Activity activity) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(activity);
@@ -168,7 +166,12 @@ public class CameraSettingsManager {
         return ((CameraSettingExposureMode) mCameraSettings.get(Setting.EXPOSURE_MODE)).getMode()
                 == CameraSettingExposureMode.Mode.TOUCH_AUTO;
     }
-    
+
+    public Boolean exposureCalibrate() {
+        return ((CameraSettingExposureMode) mCameraSettings.get(Setting.EXPOSURE_MODE)).getMode()
+                == CameraSettingExposureMode.Mode.CALIBRATION;
+    }
+
 }
 
 abstract class CameraSetting {
@@ -570,7 +573,7 @@ class CameraSettingFocusMode extends CameraSetting {
 
 class CameraSettingExposureMode extends CameraSetting {
 
-    enum Mode {CONTINUOUS_AUTO, TOUCH_AUTO, MANUAL}
+    enum Mode {CONTINUOUS_AUTO, TOUCH_AUTO, MANUAL, CALIBRATION}
     private List<Mode> mValidModes = new ArrayList<>();
     private final Mode DEFAULT_MODE = Mode.TOUCH_AUTO;
     private float DEFAULT_EXPOSURE_MS = 5f;
@@ -584,6 +587,8 @@ class CameraSettingExposureMode extends CameraSetting {
     private final String mISOPrefKey = "iso";
     private final String mExposurePrefKey = "exposure";
 
+    private float mCalibrationExposureMs = 1.0f/3200.0f;
+
     public CameraSettingExposureMode(CameraCharacteristics cameraCharacteristics) {
         //Check available modes
         int[] availableModes = cameraCharacteristics.get(
@@ -592,6 +597,7 @@ class CameraSettingExposureMode extends CameraSetting {
             switch (m) {
                 case CameraCharacteristics.CONTROL_AE_MODE_OFF:
                     mValidModes.add(Mode.MANUAL);
+                    mValidModes.add(Mode.CALIBRATION);
                     break;
                 case CameraCharacteristics.CONTROL_AE_MODE_ON:
                     mValidModes.add(Mode.TOUCH_AUTO);
@@ -666,7 +672,11 @@ class CameraSettingExposureMode extends CameraSetting {
     }
 
     private long getExposureNs() {
-        return exposureMsToNs(getExposureMs());
+        if (getMode() == Mode.CALIBRATION) {
+            return exposureMsToNs(mCalibrationExposureMs);
+        } else {
+            return exposureMsToNs(getExposureMs());
+        }
     }
 
     private float getExposureMs() {
@@ -727,6 +737,7 @@ class CameraSettingExposureMode extends CameraSetting {
     public void updateCaptureRequest(CaptureRequest.Builder builder) {
         switch (getMode()) {
             case MANUAL:
+            case CALIBRATION:
                 builder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_OFF);
                 builder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, getExposureNs());
                 builder.set(CaptureRequest.SENSOR_SENSITIVITY, getISO());
@@ -737,6 +748,10 @@ class CameraSettingExposureMode extends CameraSetting {
             case CONTINUOUS_AUTO:
                 builder.set(CaptureRequest.CONTROL_AE_MODE, CameraMetadata.CONTROL_AE_MODE_ON);
                 builder.set(CaptureRequest.CONTROL_AE_REGIONS, null);
+        }
+
+        if (getMode() == Mode.CALIBRATION) {
+            mCalibrationExposureMs *= 1.015f;
         }
     }
 }
