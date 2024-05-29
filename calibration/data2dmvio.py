@@ -23,6 +23,7 @@ def convert_to_images(video_path, result_path, image_path, proto):
         yuv = np.frombuffer(yuv_plane, dtype=np.uint8)
         yuv = yuv.reshape(w, h)
         yuv = np.transpose(yuv)
+        yuv = np.fliplr(yuv)
 
         # Write out the Y plane
         cv2.imwrite(osp.join(image_path,'{:06d}.png'.format(frame_data.time_ns)), yuv[:h,:])

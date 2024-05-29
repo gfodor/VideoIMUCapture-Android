@@ -200,14 +200,9 @@ public class Camera2Proxy {
 
             // Set control elements, we want auto white balance
             mPreviewRequestBuilder.set(
-                    CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_OFF);
+                    CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             mPreviewRequestBuilder.set(
                     CaptureRequest.CONTROL_AWB_MODE, CameraMetadata.CONTROL_AWB_MODE_AUTO);
-            mPreviewRequestBuilder.set(
-                    CaptureRequest.CONTROL_AF_MODE, CameraMetadata.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
-            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
-            Range<Integer> fpsRange = new Range<>(30,30);
-            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,fpsRange);
 
             mCameraSettingsManager.updateRequestBuilder(mPreviewRequestBuilder);
 
