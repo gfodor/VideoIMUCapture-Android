@@ -3,6 +3,7 @@ package se.lth.math.videoimucapture;
 import android.app.Activity;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
 import android.hardware.camera2.CameraAccessException;
@@ -30,6 +31,7 @@ import android.util.Log;
 import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
+import android.media.ImageReader;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,6 +55,7 @@ public class Camera2Proxy {
     private Rect sensorArraySize;
 
     private CaptureRequest mPreviewRequest;
+    private ImageReader mPreviewReader;
     private Handler mBackgroundHandler;
     private HandlerThread mBackgroundThread;
     private Surface mPreviewSurface;
@@ -224,6 +227,12 @@ public class Camera2Proxy {
             if (Build.VERSION.SDK_INT >= 28) {
                 OutputConfiguration outputConfiguration = new OutputConfiguration(mPreviewSurface);
                 mCameraSettingsManager.updateOutputConfiguration(outputConfiguration);
+
+                mPreviewReader = ImageReader.newInstance(mCameraSettingsManager.getVideoSize().getWidth(),
+                    mCameraSettingsManager.getVideoSize().getHeight(), ImageFormat.YUV_420_888, 3);
+
+                outputConfiguration.addSurface(mPreviewReader.getSurface());
+
                 mCameraDevice.createCaptureSession(new SessionConfiguration(
                         SessionConfiguration.SESSION_REGULAR,
                         Collections.singletonList(outputConfiguration),
@@ -334,7 +343,7 @@ public class Camera2Proxy {
                         mCameraSettingsManager.exposureMs *= 1.015f;
 
                         mPreviewRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, (long) (mCameraSettingsManager.exposureMs * 1e6));
-                        mPreviewRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, 3200);
+                        mPreviewRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, 200);
 
                         try {
                             mCaptureSession.setRepeatingRequest(
