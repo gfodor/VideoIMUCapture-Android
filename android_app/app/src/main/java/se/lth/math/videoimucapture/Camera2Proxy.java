@@ -315,28 +315,30 @@ public class Camera2Proxy {
                     ByteBuffer yuvOutData = null;
 
                     if (yuv != null) {
-                        Image.Plane yuvPlane = yuv.getPlanes()[0];
-                        ByteBuffer yuvInData = yuvPlane.getBuffer();
-                        int pixelStride = yuvPlane.getPixelStride();
-                        if (pixelStride != 1) {
-                            throw new RuntimeException("Unexpected pixel stride: " + pixelStride);
-                        }
+                        if (mCameraSettingsManager.saveYUVEnabled()) {
+                            Image.Plane yuvPlane = yuv.getPlanes()[0];
+                            ByteBuffer yuvInData = yuvPlane.getBuffer();
+                            int pixelStride = yuvPlane.getPixelStride();
+                            if (pixelStride != 1) {
+                                throw new RuntimeException("Unexpected pixel stride: " + pixelStride);
+                            }
 
-                        int rowStride = yuvPlane.getRowStride();
-                        int height = yuv.getHeight();
-                        int width = yuv.getWidth();
+                            int rowStride = yuvPlane.getRowStride();
+                            int height = yuv.getHeight();
+                            int width = yuv.getWidth();
 
-                        yuvOutData = ByteBuffer.allocate(width * height);
-                        byte[] tmp = new byte[width];
+                            yuvOutData = ByteBuffer.allocate(width * height);
+                            byte[] tmp = new byte[width];
 
-                        // Copy from one byte buffer into the other, accounting for row and pixel stride
-                        for (int i = 0; i < height; ++i) {
-                            int offset = i * rowStride;
+                            // Copy from one byte buffer into the other, accounting for row and pixel stride
+                            for (int i = 0; i < height; ++i) {
+                                int offset = i * rowStride;
 
-                            // Assumes pixel stride is 1, for performance
-                            yuvInData.position(offset);
-                            yuvInData.get(tmp, 0, width);
-                            yuvOutData.put(tmp);
+                                // Assumes pixel stride is 1, for performance
+                                yuvInData.position(offset);
+                                yuvInData.get(tmp, 0, width);
+                                yuvOutData.put(tmp);
+                            }
                         }
 
                         yuv.close();

@@ -34,14 +34,18 @@ import java.util.stream.Collectors;
 
 
 public class CameraSettingsManager {
-    private enum Setting {OIS, OIS_DATA, DVS, DISTORTION_CORRECTION, VIDEO_SIZE, FOCUS_MODE, EXPOSURE_MODE, ZOOM_RATIO, PHYSICAL_CAMERA, PHOTOMETRIC_CALIBRATION};
+    private enum Setting {OIS, OIS_DATA, DVS, DISTORTION_CORRECTION, VIDEO_SIZE, FOCUS_MODE, EXPOSURE_MODE, ZOOM_RATIO, PHYSICAL_CAMERA, SAVE_YUV};
     private Map<Setting, CameraSetting> mCameraSettings;
     private boolean mInitialized = false;
+
+    private SharedPreferences mSharedPreferences;
 
     public CameraSettingsManager(Activity activity) {
         SharedPreferences preferences = PreferenceManager.getDefaultSharedPreferences(activity);
         CameraSetting.setSharedPreferences(preferences);
         CameraSetting.setActivity(activity);
+        mSharedPreferences = preferences;
+
         //CameraSetting.setRestoreDefault(); // For DEBUG
         mCameraSettings = new HashMap<>();
     }
@@ -170,6 +174,10 @@ public class CameraSettingsManager {
     public Boolean exposureCalibrate() {
         return ((CameraSettingExposureMode) mCameraSettings.get(Setting.EXPOSURE_MODE)).getMode()
                 == CameraSettingExposureMode.Mode.CALIBRATION;
+    }
+
+    public Boolean saveYUVEnabled() {
+        return mSharedPreferences.getBoolean("save_yuv", false);
     }
 
 }
