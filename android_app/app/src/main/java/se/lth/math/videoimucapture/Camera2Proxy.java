@@ -6,6 +6,7 @@ import android.content.SharedPreferences;
 import android.graphics.ImageFormat;
 import android.graphics.Rect;
 import android.graphics.SurfaceTexture;
+import android.hardware.HardwareBuffer;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -212,7 +213,17 @@ public class Camera2Proxy {
                         mPreviewSize.getHeight());
                 mPreviewSurface = new Surface(mPreviewSurfaceTexture);
             }
+
             mPreviewRequestBuilder.addTarget(mPreviewSurface);
+
+            if (mPreviewReader == null && Build.VERSION.SDK_INT >= 29) {
+                mPreviewReader = ImageReader.newInstance(mPreviewSize.getWidth(), mPreviewSize.getHeight(), ImageFormat.YUV_420_888, 3, HardwareBuffer.USAGE_CPU_READ_OFTEN);
+            }
+
+            if (Build.VERSION.SDK_INT >= 29) {
+                mPreviewRequestBuilder.addTarget(mPreviewReader.getSurface());
+            }
+
             CameraCaptureSession.StateCallback cb =
                     new CameraCaptureSession.StateCallback() {
 
@@ -228,18 +239,16 @@ public class Camera2Proxy {
                             Log.e(TAG, "ConfigureFailed. session: mCaptureSession");
                         }
                     };
-            if (Build.VERSION.SDK_INT >= 28) {
+            if (Build.VERSION.SDK_INT >= 29) {
                 OutputConfiguration outputConfiguration = new OutputConfiguration(mPreviewSurface);
                 mCameraSettingsManager.updateOutputConfiguration(outputConfiguration);
 
-                mPreviewReader = ImageReader.newInstance(mCameraSettingsManager.getVideoSize().getWidth(),
-                    mCameraSettingsManager.getVideoSize().getHeight(), ImageFormat.YUV_420_888, 3);
-
-                outputConfiguration.addSurface(mPreviewReader.getSurface());
+                OutputConfiguration slamOutputConfiguration = new OutputConfiguration(mPreviewReader.getSurface());
+                mCameraSettingsManager.updateOutputConfiguration(slamOutputConfiguration);
 
                 mCameraDevice.createCaptureSession(new SessionConfiguration(
                         SessionConfiguration.SESSION_REGULAR,
-                        Collections.singletonList(outputConfiguration),
+                        Arrays.asList(outputConfiguration, slamOutputConfiguration),
                         r -> mBackgroundHandler.post(r),
                         cb));
             } else {
@@ -306,6 +315,10 @@ public class Camera2Proxy {
                         Image.Plane yuvPlane = yuv.getPlanes()[0];
                         ByteBuffer yuvInData = yuvPlane.getBuffer();
                         int pixelStride = yuvPlane.getPixelStride();
+                        if (pixelStride != 1) {
+                            throw new RuntimeException("Unexpected pixel stride: " + pixelStride);
+                        }
+
                         int rowStride = yuvPlane.getRowStride();
                         int height = yuv.getHeight();
                         int width = yuv.getWidth();
@@ -313,12 +326,17 @@ public class Camera2Proxy {
                         yuvOutData = ByteBuffer.allocate(width * height);
                         byte[] tmp = new byte[width];
 
+                        // Copy from one byte buffer into the other, accounting for row and pixel stride
                         for (int i = 0; i < height; ++i) {
-                            int destOffset = i * pixelStride;
-                            int srcOffset = (i * pixelStride) * rowStride;
-                            yuvInData.get(tmp, srcOffset, width);
-                            yuvOutData.put(tmp, destOffset, width);
+                            int offset = i * rowStride;
+
+                            // Assumes pixel stride is 1, for performance
+                            yuvInData.position(offset);
+                            yuvInData.get(tmp, 0, width);
+                            yuvOutData.put(tmp);
                         }
+
+                        yuv.close();
                     }
 
                     if (mFocusTriggered) {
@@ -366,18 +384,20 @@ public class Camera2Proxy {
                     }
 
                     if (mCameraSettingsManager.exposureMs < 1000.0f) {
-                        mCameraSettingsManager.exposureMs *= 1.015f;
+                        mPreviewRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, (long) (33.0 * 1e6));
 
-                        mPreviewRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, (long) (mCameraSettingsManager.exposureMs * 1e6));
+                        //mCameraSettingsManager.exposureMs *= 1.015f;
+
+                        //mPreviewRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, (long) (mCameraSettingsManager.exposureMs * 1e6));
                         mPreviewRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, 200);
 
-                        try {
-                            mCaptureSession.setRepeatingRequest(
-                                    mPreviewRequestBuilder.build(),
-                                    mSessionCaptureCallback, mBackgroundHandler);
-                        } catch (CameraAccessException e) {
-                            e.printStackTrace();
-                        }
+                        //try {
+                        //    mCaptureSession.setRepeatingRequest(
+                        //            mPreviewRequestBuilder.build(),
+                        //            mSessionCaptureCallback, mBackgroundHandler);
+                        //} catch (CameraAccessException e) {
+                        //    e.printStackTrace();
+                        //}
                     }
 
                     Long exposureTimeNs = result.get(CaptureResult.SENSOR_EXPOSURE_TIME);
@@ -588,6 +608,7 @@ public class Camera2Proxy {
         }
 
         if (yuvOutData != null) {
+            yuvOutData.position(0);
             frameBuilder.setYuvPlane(ByteString.copyFrom(yuvOutData));
         }
 
@@ -595,8 +616,8 @@ public class Camera2Proxy {
 
     }
 
-    private void logAnalyticsConfig()                             byte[] tmp = new byte[width];
-{
+    private void logAnalyticsConfig()
+    {
         Context context = mActivity;
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         int versionCode = BuildConfig.VERSION_CODE;

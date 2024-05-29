@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         applicationId "se.lth.math.videoimucapture"
-        minSdkVersion 24
+        minSdkVersion 30
         targetSdkVersion 30
         versionCode 12
         versionName "0.12"
