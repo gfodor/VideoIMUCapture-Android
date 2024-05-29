@@ -21,7 +21,7 @@ class VideoFinishedException(Exception):
     pass
 
 bridge = CvBridge()
-NSECS_IN_SEC=long(1e9)
+NSECS_IN_SEC=int(1e9)
 
 def convert_to_bag(proto, video_path, result_path, subsample=1, compress_img=False, compress_bag=False, resize = [], raw_imu =False):
     #Init rosbag
