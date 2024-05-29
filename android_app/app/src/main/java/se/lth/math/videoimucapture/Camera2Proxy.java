@@ -27,6 +27,7 @@ import androidx.annotation.NonNull;
 
 import androidx.preference.PreferenceManager;
 import android.util.Log;
+import android.util.Range;
 import android.util.Size;
 import android.view.Surface;
 
@@ -192,6 +193,8 @@ public class Camera2Proxy {
             mPreviewRequestBuilder.set(
                     CaptureRequest.CONTROL_AWB_MODE, CameraMetadata.CONTROL_AWB_MODE_AUTO);
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE, CaptureRequest.CONTROL_AE_MODE_OFF);
+            Range<Integer> fpsRange = new Range<>(30,30);
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,fpsRange);
 
             mCameraSettingsManager.updateRequestBuilder(mPreviewRequestBuilder);
 
