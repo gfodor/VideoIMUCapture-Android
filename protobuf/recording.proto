@@ -74,7 +74,7 @@ message VideoFrameMetaData {
   }
   repeated OISSample OIS_samples =10;
   bool focus_locked = 11;
-  bytes yuvPlane = 12;
+  bytes yuv_plane = 12;
 }
 
 message IMUInfo {

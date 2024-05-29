@@ -7,37 +7,25 @@ import cv2
 import sys
 from data2rosbag import _makedir, adjust_calibration
 from interpolate_imu_file import interpolate_imu_file
+import numpy as np
 
 def convert_to_images(video_path, result_path, image_path, proto):
-    try:
-        cap = cv2.VideoCapture(video_path)
+    w = proto.camera_meta.resolution.width
+    h = proto.camera_meta.resolution.height
 
-        # Generate images from video and frame data
-        got_frame, frame = cap.read()
-        resolution = (frame.shape[1], frame.shape[0])
+    for frame_data in proto.video_meta:
+        if frame_data.yuv_plane == b'':
+            continue
 
-        frame_index_to_time_ns = {}
+        yuv_plane = frame_data.yuv_plane
 
-        for i,frame_data in enumerate(proto.video_meta):
-            frame_index_to_time_ns[frame_data.frame_number] = frame_data.time_ns
+        # YUV plane is a series of bytes YUV 420 888, write these values out as is to a greyscale file
+        yuv = np.frombuffer(yuv_plane, dtype=np.uint8)
+        yuv = yuv.reshape(w, h)
+        yuv = np.transpose(yuv)
 
-        i = 0
-        while got_frame:
-            if i in frame_index_to_time_ns:
-                time_ns = frame_index_to_time_ns[i]
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                cv2.imwrite(osp.join(image_path,'{:06d}.png'.format(time_ns)), frame)
-            else:
-                if i < len(proto.video_meta) - 1:
-                    print("warning: frame {} not found in proto".format(i))
-
-            got_frame, frame = cap.read()
-            i += 1
-
-    finally:
-        cap.release()
-
-    return resolution
+        # Write out the Y plane
+        cv2.imwrite(osp.join(image_path,'{:06d}.png'.format(frame_data.time_ns)), yuv[:h,:])
 
 if __name__ == "__main__":
 
