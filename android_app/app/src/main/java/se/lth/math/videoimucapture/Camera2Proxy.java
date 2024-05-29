@@ -329,7 +329,7 @@ public class Camera2Proxy {
                     }
 
                     if (mCameraSettingsManager.exposureMs < 1000.0f) {
-                        mCameraSettingsManager.exposureMs *= 1.025f;
+                        mCameraSettingsManager.exposureMs *= 1.015f;
 
                         mPreviewRequestBuilder.set(CaptureRequest.SENSOR_EXPOSURE_TIME, (long) (mCameraSettingsManager.exposureMs * 1e6));
                         mPreviewRequestBuilder.set(CaptureRequest.SENSOR_SENSITIVITY, 3200);
