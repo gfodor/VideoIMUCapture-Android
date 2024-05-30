@@ -76,7 +76,7 @@ if __name__ == "__main__":
                 yuv = np.fliplr(yuv)
 
                 # Write out the Y plane
-                cv2.imwrite(osp.join(image_dir,'{:06d}.png'.format(frame_data.time_ns)), yuv[:h,:])
+                cv2.imwrite(osp.join(image_dir,'{:06d}_lossless.png'.format(frame_data.time_ns)), yuv[:h,:], [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
         interpolate_imu_file(imu_raw_path, times_path, osp.join(result_dir, 'imu.txt'))
 

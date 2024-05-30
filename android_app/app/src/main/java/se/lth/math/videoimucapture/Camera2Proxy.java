@@ -352,9 +352,9 @@ public class Camera2Proxy {
                                 yuvInData.get(tmp, 0, width);
                                 yuvOutData.put(tmp);
                             }
-                        }
 
-                        yuv.close();
+                            yuv.close();
+                        }
                     }
 
                     if (mFocusTriggered) {
