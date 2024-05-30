@@ -201,6 +201,11 @@ public class Camera2Proxy {
             // Set control elements, we do not want auto white balance, shading, or aberration correction because we're using DSO
             mPreviewRequestBuilder.set(
                     CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
+
+            // Run at 20 FPS, given performance constrants
+            Range<Integer> fpsRange = new Range<>(0,20);
+            mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,fpsRange);
+
             mPreviewRequestBuilder.set(
                     CaptureRequest.CONTROL_AWB_MODE, CameraMetadata.CONTROL_AWB_MODE_OFF);
             mPreviewRequestBuilder.set(
