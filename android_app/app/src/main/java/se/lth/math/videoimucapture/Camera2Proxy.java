@@ -406,11 +406,13 @@ public class Camera2Proxy {
                     mFocalLengthHelper.setmCropRegion(rect);
                     Float focal_length_pix = mFocalLengthHelper.getFocalLengthPixel();
 
+                    Integer iso = result.get(CaptureResult.SENSOR_SENSITIVITY);
+
                     if (mRecordingMetadata) {
                         writeCaptureData(result, focal_length_pix, yuvOutData);
                     }
                     ((CameraCaptureActivity) mActivity).getmCameraCaptureFragment()
-                            .updateCaptureResultPanel(focal_length_pix, exposureTimeNs);
+                            .updateCaptureResultPanel(focal_length_pix, exposureTimeNs, iso);
                 }
 
                 @Override
