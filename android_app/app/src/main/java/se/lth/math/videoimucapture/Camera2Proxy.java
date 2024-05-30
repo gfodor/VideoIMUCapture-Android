@@ -198,11 +198,15 @@ public class Camera2Proxy {
         try {
             mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
 
-            // Set control elements, we want auto white balance
+            // Set control elements, we do not want auto white balance, shading, or aberration correction because we're using DSO
             mPreviewRequestBuilder.set(
                     CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
             mPreviewRequestBuilder.set(
-                    CaptureRequest.CONTROL_AWB_MODE, CameraMetadata.CONTROL_AWB_MODE_AUTO);
+                    CaptureRequest.CONTROL_AWB_MODE, CameraMetadata.CONTROL_AWB_MODE_OFF);
+            mPreviewRequestBuilder.set(
+                    CaptureRequest.SHADING_MODE, CameraMetadata.SHADING_MODE_OFF);
+            mPreviewRequestBuilder.set(
+                    CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE, CameraMetadata.COLOR_CORRECTION_ABERRATION_MODE_OFF);
 
             mCameraSettingsManager.updateRequestBuilder(mPreviewRequestBuilder);
 
@@ -214,11 +218,11 @@ public class Camera2Proxy {
 
             mPreviewRequestBuilder.addTarget(mPreviewSurface);
 
-            if (mPreviewReader == null && Build.VERSION.SDK_INT >= 29) {
+            if (mPreviewReader == null && Build.VERSION.SDK_INT >= 29 && mCameraSettingsManager.saveYUVEnabled()) {
                 mPreviewReader = ImageReader.newInstance(mPreviewSize.getWidth(), mPreviewSize.getHeight(), ImageFormat.YUV_420_888, 3, HardwareBuffer.USAGE_CPU_READ_OFTEN);
             }
 
-            if (Build.VERSION.SDK_INT >= 29) {
+            if (Build.VERSION.SDK_INT >= 29 && mPreviewReader != null) {
                 mPreviewRequestBuilder.addTarget(mPreviewReader.getSurface());
             }
 
@@ -241,14 +245,22 @@ public class Camera2Proxy {
                 OutputConfiguration outputConfiguration = new OutputConfiguration(mPreviewSurface);
                 mCameraSettingsManager.updateOutputConfiguration(outputConfiguration);
 
-                OutputConfiguration slamOutputConfiguration = new OutputConfiguration(mPreviewReader.getSurface());
-                mCameraSettingsManager.updateOutputConfiguration(slamOutputConfiguration);
+                if (mPreviewReader != null) {
+                    OutputConfiguration slamOutputConfiguration = new OutputConfiguration(mPreviewReader.getSurface());
+                    mCameraSettingsManager.updateOutputConfiguration(slamOutputConfiguration);
 
-                mCameraDevice.createCaptureSession(new SessionConfiguration(
-                        SessionConfiguration.SESSION_REGULAR,
-                        Arrays.asList(outputConfiguration, slamOutputConfiguration),
-                        r -> mBackgroundHandler.post(r),
-                        cb));
+                    mCameraDevice.createCaptureSession(new SessionConfiguration(
+                            SessionConfiguration.SESSION_REGULAR,
+                            Arrays.asList(outputConfiguration, slamOutputConfiguration),
+                            r -> mBackgroundHandler.post(r),
+                            cb));
+                } else {
+                    mCameraDevice.createCaptureSession(new SessionConfiguration(
+                            SessionConfiguration.SESSION_REGULAR,
+                            Collections.singletonList(outputConfiguration),
+                            r -> mBackgroundHandler.post(r),
+                            cb));
+                }
             } else {
                 mCameraDevice.createCaptureSession(
                         Collections.singletonList(mPreviewSurface),
@@ -306,11 +318,12 @@ public class Camera2Proxy {
                         mExposureTriggered |= (result.get(CaptureResult.CONTROL_AE_STATE) == CaptureResult.CONTROL_AE_STATE_SEARCHING);
                     }
 
-                    Image yuv = mPreviewReader.acquireLatestImage();
                     ByteBuffer yuvOutData = null;
 
-                    if (yuv != null) {
-                        if (mCameraSettingsManager.saveYUVEnabled()) {
+                    if (mPreviewReader != null) {
+                        Image yuv = mPreviewReader.acquireLatestImage();
+
+                        if (yuv != null) {
                             Image.Plane yuvPlane = yuv.getPlanes()[0];
                             ByteBuffer yuvInData = yuvPlane.getBuffer();
                             int pixelStride = yuvPlane.getPixelStride();

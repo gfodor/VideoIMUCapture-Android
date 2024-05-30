@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 
 
 public class CameraSettingsManager {
-    private enum Setting {OIS, OIS_DATA, DVS, DISTORTION_CORRECTION, VIDEO_SIZE, FOCUS_MODE, EXPOSURE_MODE, ZOOM_RATIO, PHYSICAL_CAMERA, SAVE_YUV};
+    private enum Setting {OIS, OIS_DATA, DVS, DISTORTION_CORRECTION, AWB, VIDEO_SIZE, FOCUS_MODE, EXPOSURE_MODE, ZOOM_RATIO, PHYSICAL_CAMERA, SAVE_YUV};
     private Map<Setting, CameraSetting> mCameraSettings;
     private boolean mInitialized = false;
 

@@ -21,7 +21,7 @@
         <SwitchPreferenceCompat
             app:key="save_yuv"
             app:title="Save YUV plane"
-            app:summary="Write the YUV plane into the outputs (large but lossless)"
+            app:summary="Write the YUV plane into the outputs (slows down IMU data, requires restart)"
             app:persistent="true"/>
 
         <ListPreference

@@ -63,7 +63,7 @@ if __name__ == "__main__":
                     continue
 
                 exposure_time_ms = frame_data.exposure_time_ns / 1e6
-                iso_factor = frame_data.iso / 400 # Incorporate the iso into the exposure time
+                iso_factor = 1 # frame_data.iso / 400 # Incorporate the iso into the exposure time
 
                 f.write("{} {} {}\n".format(frame_data.time_ns, frame_data.time_ns/ 1e9, exposure_time_ms * iso_factor))
 
