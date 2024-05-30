@@ -63,8 +63,10 @@ if __name__ == "__main__":
                     continue
 
                 exposure_time_ms = frame_data.exposure_time_ns / 1e6
-                iso_factor = 1 # frame_data.iso / 400 # Incorporate the iso into the exposure time
+                iso_factor = frame_data.iso / 1600 # Incorporate the iso into the exposure time
 
+                #print("Frame time: {}s, Exposure time: {}ms, ISO: {}, ISO factor: {} New exposures: {}".format(frame_data.time_ns/1e9, exposure_time_ms, frame_data.iso, iso_factor, exposure_time_ms * iso_factor))
+                #f.write("{} {} {}\n".format(frame_data.time_ns, frame_data.time_ns/ 1e9, exposure_time_ms * iso_factor * 0.25))
                 f.write("{} {} {}\n".format(frame_data.time_ns, frame_data.time_ns/ 1e9, exposure_time_ms * iso_factor))
 
                 yuv_plane = frame_data.yuv_plane
@@ -76,7 +78,7 @@ if __name__ == "__main__":
                 yuv = np.fliplr(yuv)
 
                 # Write out the Y plane
-                cv2.imwrite(osp.join(image_dir,'{:06d}_lossless.png'.format(frame_data.time_ns)), yuv[:h,:], [cv2.IMWRITE_PNG_COMPRESSION, 0])
+                cv2.imwrite(osp.join(image_dir,'{:06d}.png'.format(frame_data.time_ns)), yuv[:h,:], [cv2.IMWRITE_PNG_COMPRESSION, 0])
 
         interpolate_imu_file(imu_raw_path, times_path, osp.join(result_dir, 'imu.txt'))
 
