@@ -14,6 +14,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Creates a dmvio compatible input')
     parser.add_argument('video_path', type=str, help='Path to video and protobuf')
     parser.add_argument('--result-dir', type=str, help='Path to result folder, default same as video file', default = None)
+    parser.add_argument('--target-fps', type=float, help='Target FPS for the output', default = 20.0)
 
     args = parser.parse_args()
 
@@ -23,6 +24,7 @@ if __name__ == "__main__":
 
         sub_path = osp.relpath(root,start=args.video_path)
         result_dir = osp.join(args.result_dir, sub_path) if args.result_dir else osp.join(root, 'dmvio')
+        frame_duration = 1.0 / args.target_fps - 0.01
         image_dir = osp.join(result_dir, 'images')
 
         _makedir(result_dir)
@@ -54,6 +56,8 @@ if __name__ == "__main__":
         w = proto.camera_meta.resolution.width
         h = proto.camera_meta.resolution.height
 
+        last_frame_time = 0
+
         with open(times_path, 'w') as f:
             for frame_data in proto.video_meta:
                 if frame_data.yuv_plane == b'':
@@ -62,6 +66,10 @@ if __name__ == "__main__":
                 if frame_data.time_ns > max_imu_ns:
                     continue
 
+                if last_frame_time != 0 and frame_data.time_ns - last_frame_time < 1e9 * frame_duration:
+                    continue
+
+                last_frame_time = frame_data.time_ns
                 exposure_time_ms = frame_data.exposure_time_ns / 1e6
                 iso_factor = frame_data.iso / 1600 # Incorporate the iso into the exposure time
 
