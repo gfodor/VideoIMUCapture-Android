@@ -28,6 +28,7 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import androidx.annotation.NonNull;
 
+import androidx.annotation.RequiresApi;
 import androidx.preference.PreferenceManager;
 import android.util.Log;
 import android.util.Range;
@@ -76,6 +77,7 @@ public class Camera2Proxy {
     private boolean mSwappedDimensions;
     private int mSensorOrientation;
     private boolean mExposureTriggered = false;
+    private long lastPeriodicExposure = 0;
     private boolean mFocusTriggered = false;
 
     private FocalLengthHelper mFocalLengthHelper = new FocalLengthHelper();
@@ -194,6 +196,7 @@ public class Camera2Proxy {
         mPreviewSurfaceTexture = surfaceTexture;
     }
 
+    @RequiresApi(api = Build.VERSION_CODES.P)
     private void initPreviewRequest() {
         try {
             mPreviewRequestBuilder = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_RECORD);
@@ -202,8 +205,7 @@ public class Camera2Proxy {
             mPreviewRequestBuilder.set(
                     CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
 
-            // Run at 20 FPS, given performance constrants
-            Range<Integer> fpsRange = new Range<>(0,20);
+            Range<Integer> fpsRange = new Range<>(40,40);
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,fpsRange);
 
             mPreviewRequestBuilder.set(
@@ -383,12 +385,14 @@ public class Camera2Proxy {
 
                     }
 
-                    if (mCameraSettingsManager.exposureOnTouch() && !mFocusTriggered && mExposureTriggered) {
+                    if ((mCameraSettingsManager.exposureOnTouch() || mCameraSettingsManager.exposurePeriodic()) && !mFocusTriggered && mExposureTriggered) {
                         // We are handling auto-exposure, lock if converged.
                         // Wait for auto-focus to finish first
                         Log.d(TAG, "Exposure state:" + result.get(CaptureResult.CONTROL_AE_STATE));
                         if (result.get(CaptureResult.CONTROL_AE_STATE) != CaptureResult.CONTROL_AE_STATE_SEARCHING) {
                             mExposureTriggered = false;
+                            lastPeriodicExposure = System.currentTimeMillis();
+
                             //Lock AE
                             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, true);
                             try {
@@ -404,6 +408,17 @@ public class Camera2Proxy {
                     if (mCameraSettingsManager.exposureCalibrate()) {
                         mCameraSettingsManager.updateRequestBuilder(mPreviewRequestBuilder);
 
+                        try {
+                            mCaptureSession.setRepeatingRequest(
+                                    mPreviewRequestBuilder.build(), mSessionCaptureCallback, mBackgroundHandler);
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    if (mCameraSettingsManager.exposurePeriodic() && lastPeriodicExposure < System.currentTimeMillis() - 1000 && !mFocusTriggered && !mExposureTriggered) {
+                        mExposureTriggered = true;
+                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
                         try {
                             mCaptureSession.setRepeatingRequest(
                                     mPreviewRequestBuilder.build(), mSessionCaptureCallback, mBackgroundHandler);

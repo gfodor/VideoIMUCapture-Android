@@ -176,6 +176,11 @@ public class CameraSettingsManager {
                 == CameraSettingExposureMode.Mode.CALIBRATION;
     }
 
+    public Boolean exposurePeriodic() {
+        return ((CameraSettingExposureMode) mCameraSettings.get(Setting.EXPOSURE_MODE)).getMode()
+                == CameraSettingExposureMode.Mode.PERIODIC;
+    }
+
     public Boolean saveYUVEnabled() {
         return mSharedPreferences.getBoolean("save_yuv", false);
     }
@@ -581,7 +586,7 @@ class CameraSettingFocusMode extends CameraSetting {
 
 class CameraSettingExposureMode extends CameraSetting {
 
-    enum Mode {CONTINUOUS_AUTO, TOUCH_AUTO, MANUAL, CALIBRATION}
+    enum Mode {CONTINUOUS_AUTO, TOUCH_AUTO, MANUAL, CALIBRATION, PERIODIC}
     private List<Mode> mValidModes = new ArrayList<>();
     private final Mode DEFAULT_MODE = Mode.TOUCH_AUTO;
     private float DEFAULT_EXPOSURE_MS = 5f;
@@ -606,6 +611,7 @@ class CameraSettingExposureMode extends CameraSetting {
                 case CameraCharacteristics.CONTROL_AE_MODE_OFF:
                     mValidModes.add(Mode.MANUAL);
                     mValidModes.add(Mode.CALIBRATION);
+                    mValidModes.add(Mode.PERIODIC);
                     break;
                 case CameraCharacteristics.CONTROL_AE_MODE_ON:
                     mValidModes.add(Mode.TOUCH_AUTO);
