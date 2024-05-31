@@ -599,9 +599,11 @@ public class Camera2Proxy {
                 .setFocalLengthMm(result.get(CaptureResult.LENS_FOCAL_LENGTH))
                 .setEstFocalLengthPix(focal_length_pix);
 
-        int focus_state = result.get(CaptureResult.CONTROL_AF_STATE);
-        frameBuilder.setFocusLocked(focus_state != CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN
-                                 && focus_state != CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN);
+        if (result.get(CaptureResult.CONTROL_AF_STATE) != null) {
+            int focus_state = result.get(CaptureResult.CONTROL_AF_STATE);
+            frameBuilder.setFocusLocked(focus_state != CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN
+                    && focus_state != CaptureResult.CONTROL_AF_STATE_PASSIVE_SCAN);
+        }
 
         // The following values are allowed to be null
         Long sExp = result.get(CaptureResult.SENSOR_EXPOSURE_TIME);
