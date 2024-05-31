@@ -205,7 +205,7 @@ public class Camera2Proxy {
             mPreviewRequestBuilder.set(
                     CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
 
-            Range<Integer> fpsRange = new Range<>(40,40);
+            Range<Integer> fpsRange = new Range<>(60,60);
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,fpsRange);
 
             mPreviewRequestBuilder.set(
@@ -385,13 +385,12 @@ public class Camera2Proxy {
 
                     }
 
-                    if ((mCameraSettingsManager.exposureOnTouch() || mCameraSettingsManager.exposurePeriodic()) && !mFocusTriggered && mExposureTriggered) {
+                    if (mCameraSettingsManager.exposureOnTouch() && !mFocusTriggered && mExposureTriggered) {
                         // We are handling auto-exposure, lock if converged.
                         // Wait for auto-focus to finish first
                         Log.d(TAG, "Exposure state:" + result.get(CaptureResult.CONTROL_AE_STATE));
                         if (result.get(CaptureResult.CONTROL_AE_STATE) != CaptureResult.CONTROL_AE_STATE_SEARCHING) {
                             mExposureTriggered = false;
-                            lastPeriodicExposure = System.currentTimeMillis();
 
                             //Lock AE
                             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, true);
@@ -416,9 +415,19 @@ public class Camera2Proxy {
                         }
                     }
 
-                    if (mCameraSettingsManager.exposurePeriodic() && lastPeriodicExposure < System.currentTimeMillis() - 1000 && !mFocusTriggered && !mExposureTriggered) {
-                        mExposureTriggered = true;
+                    if (mCameraSettingsManager.exposurePeriodic() && lastPeriodicExposure < System.currentTimeMillis() - 1000) {
                         mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, false);
+                        try {
+                            mCaptureSession.setRepeatingRequest(
+                                    mPreviewRequestBuilder.build(), mSessionCaptureCallback, mBackgroundHandler);
+                        } catch (CameraAccessException e) {
+                            e.printStackTrace();
+                        }
+
+                        lastPeriodicExposure = System.currentTimeMillis();
+                    } else if (mCameraSettingsManager.exposurePeriodic() && lastPeriodicExposure < System.currentTimeMillis() - 50) {
+                        mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_LOCK, true);
+
                         try {
                             mCaptureSession.setRepeatingRequest(
                                     mPreviewRequestBuilder.build(), mSessionCaptureCallback, mBackgroundHandler);
