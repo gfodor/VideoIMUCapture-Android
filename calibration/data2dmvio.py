@@ -15,6 +15,8 @@ if __name__ == "__main__":
     parser.add_argument('video_path', type=str, help='Path to video and protobuf')
     parser.add_argument('--result-dir', type=str, help='Path to result folder, default same as video file', default = None)
     parser.add_argument('--target-fps', type=float, help='Target FPS for the output', default = 20.0)
+    parser.add_argument('--skip-iso-normalize', action='store_true', help='Normalize exposure time by ISO', default = False)
+    parser.add_argument('--iso-factor', action='store_true', help='Normalize exposure time by ISO value', default = 400)
 
     args = parser.parse_args()
 
@@ -63,15 +65,19 @@ if __name__ == "__main__":
                 if frame_data.yuv_plane == b'':
                     continue
 
-                if frame_data.time_ns > max_imu_ns:
-                    continue
+                #if frame_data.time_ns > max_imu_ns:
+                #    continue
 
                 if last_frame_time != 0 and frame_data.time_ns - last_frame_time < 1e9 * frame_duration:
                     continue
 
                 last_frame_time = frame_data.time_ns
                 exposure_time_ms = frame_data.exposure_time_ns / 1e6
-                iso_factor = frame_data.iso / 1600 # Incorporate the iso into the exposure time
+
+                iso_factor = 1
+
+                if not args.skip_iso_normalize:
+                    iso_factor = frame_data.iso / args.iso_factor # Incorporate the iso into the exposure time
 
                 #print("Frame time: {}s, Exposure time: {}ms, ISO: {}, ISO factor: {} New exposures: {}".format(frame_data.time_ns/1e9, exposure_time_ms, frame_data.iso, iso_factor, exposure_time_ms * iso_factor))
                 #f.write("{} {} {}\n".format(frame_data.time_ns, frame_data.time_ns/ 1e9, exposure_time_ms * iso_factor * 0.25))
