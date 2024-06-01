@@ -25,7 +25,7 @@ public class RecordingWriter implements Runnable{
     final private Boolean VERBOSE = false;
 
     private FileOutputStream mFileStream;
-    private BlockingQueue<MessageWrapper> mQueue = new ArrayBlockingQueue<>(1000);
+    private BlockingQueue<MessageWrapper> mQueue = new ArrayBlockingQueue<>(100000);
     //Empty message as poison pill
     private final MessageWrapper mPoisonPill = MessageWrapper.newBuilder().build();
 

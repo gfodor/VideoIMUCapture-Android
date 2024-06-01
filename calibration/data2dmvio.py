@@ -16,7 +16,7 @@ if __name__ == "__main__":
     parser.add_argument('--result-dir', type=str, help='Path to result folder, default same as video file', default = None)
     parser.add_argument('--target-fps', type=float, help='Target FPS for the output', default = 20.0)
     parser.add_argument('--skip-iso-normalize', action='store_true', help='Normalize exposure time by ISO', default = False)
-    parser.add_argument('--iso-factor', action='store_true', help='Normalize exposure time by ISO value', default = 400)
+    parser.add_argument('--iso-factor', type=int, help='Normalize exposure time by ISO value', default = 400)
 
     args = parser.parse_args()
 
@@ -65,8 +65,8 @@ if __name__ == "__main__":
                 if frame_data.yuv_plane == b'':
                     continue
 
-                #if frame_data.time_ns > max_imu_ns:
-                #    continue
+                if frame_data.time_ns > max_imu_ns:
+                    raise ValueError("Frame time exceeds IMU time")
 
                 if last_frame_time != 0 and frame_data.time_ns - last_frame_time < 1e9 * frame_duration:
                     continue
