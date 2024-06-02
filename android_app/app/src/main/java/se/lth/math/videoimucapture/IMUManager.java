@@ -31,8 +31,7 @@ public class IMUManager extends SensorEventCallback {
     private long mPrevTimestamp = 0; // ns
     private float[] mSensorPlacement = null;
 
-    // 400hz, the max rate for both sensors
-    private int mSamplingPeriod = 2500;
+    private int mSamplingPeriod = 10000;
 
     private static class SensorPacket {
         long timestamp;
@@ -242,6 +241,8 @@ public class IMUManager extends SensorEventCallback {
 
     @Override
     public final void onSensorChanged(SensorEvent event) {
+        if (!mRecordingInertialData) return;
+
         if (event.sensor.getType() == ACC_TYPE) {
             SensorPacket sp = new SensorPacket(event.timestamp, event.values);
             mAccelData.add(sp);
@@ -252,13 +253,10 @@ public class IMUManager extends SensorEventCallback {
             mGyroData.add(sp);
 
             // sync data
-            if (mRecordingInertialData) {
-                SyncedSensorPacket syncedData = syncInertialData();
-                if (syncedData != null)
-                    writeData(syncedData);
-            }
+            SyncedSensorPacket syncedData = syncInertialData();
 
-            updateSensorRate(event);
+            if (syncedData != null)
+                writeData(syncedData);
         }
     }
 
