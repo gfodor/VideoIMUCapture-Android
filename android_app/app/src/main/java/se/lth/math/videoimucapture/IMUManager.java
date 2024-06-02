@@ -31,6 +31,9 @@ public class IMUManager extends SensorEventCallback {
     private long mPrevTimestamp = 0; // ns
     private float[] mSensorPlacement = null;
 
+    // 400hz, the max rate for both sensors
+    private int mSamplingPeriod = 2500;
+
     private static class SensorPacket {
         long timestamp;
         float[] values;
@@ -254,6 +257,8 @@ public class IMUManager extends SensorEventCallback {
                 if (syncedData != null)
                     writeData(syncedData);
             }
+
+            updateSensorRate(event);
         }
     }
 
@@ -280,8 +285,10 @@ public class IMUManager extends SensorEventCallback {
         mSensorThread.start();
         // Blocks until looper is prepared, which is fairly quick
         Handler sensorHandler = new Handler(mSensorThread.getLooper());
-        mSensorManager.registerListener(this, mAccel, SensorManager.SENSOR_DELAY_FASTEST, sensorHandler);
-        mSensorManager.registerListener(this, mGyro, SensorManager.SENSOR_DELAY_FASTEST, sensorHandler);
+
+        // Update at 400hz, since that's the max rate both sensors support
+        mSensorManager.registerListener(this, mAccel, mSamplingPeriod, sensorHandler);
+        mSensorManager.registerListener(this, mGyro, mSamplingPeriod, sensorHandler);
     }
 
     /**
