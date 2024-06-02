@@ -39,20 +39,50 @@ if __name__ == "__main__":
         max_imu_ns = 0
         imu_raw_path = osp.join(result_dir, 'imu_raw.txt')
         imu_path = osp.join(result_dir, 'imu.txt')
+        max_gyr_x = 0
+        min_gyr_x = 99999
+        max_gyr_y = 0
+        min_gyr_y = 99999
+        max_gyr_z = 0
+        min_gyr_z = 99999
+        max_acc_x = 0
+        min_acc_x = 99999
+        max_acc_y = 0
+        min_acc_y = 99999
+        max_acc_z = 0
+        min_acc_z = 99999
 
         with open(imu_raw_path, 'w') as f:
             for imu_frame in proto.imu:
                 gyro_drift = imu_frame.gyro_drift
                 accel_bias = imu_frame.accel_bias
-                gyro_x = imu_frame.gyro[0] - gyro_drift[0]
-                gyro_y = imu_frame.gyro[1] - gyro_drift[1]
-                gyro_z = imu_frame.gyro[2] - gyro_drift[2]
-                accel_x = imu_frame.accel[0] - accel_bias[0]
-                accel_y = imu_frame.accel[1] - accel_bias[1]
-                accel_z = imu_frame.accel[2] - accel_bias[2]
+                gyro_x = imu_frame.gyro[0]
+                gyro_y = imu_frame.gyro[1]
+                gyro_z = imu_frame.gyro[2]
+                accel_x = imu_frame.accel[0]
+                accel_y = imu_frame.accel[1]
+                accel_z = imu_frame.accel[2]
                 max_imu_ns = max(max_imu_ns, imu_frame.time_ns)
+                max_gyr_x = max(max_gyr_x, imu_frame.gyro[0])
+                min_gyr_x = min(min_gyr_x, imu_frame.gyro[0])
+                max_gyr_y = max(max_gyr_x, imu_frame.gyro[1])
+                min_gyr_y = min(min_gyr_x, imu_frame.gyro[1])
+                max_gyr_z = max(max_gyr_x, imu_frame.gyro[2])
+                min_gyr_z = min(min_gyr_x, imu_frame.gyro[2])
+                max_acc_x = max(max_acc_x, imu_frame.accel[0])
+                min_acc_x = min(min_acc_x, imu_frame.accel[0])
+                max_acc_y = max(max_acc_x, imu_frame.accel[1])
+                min_acc_y = min(min_acc_x, imu_frame.accel[1])
+                max_acc_z = max(max_acc_x, imu_frame.accel[2])
+                min_acc_z = min(min_acc_x, imu_frame.accel[2])
                 f.write("{} {} {} {} {} {} {}\n".format(imu_frame.time_ns, gyro_x, gyro_y, gyro_z, accel_x, accel_y, accel_z))
 
+        print("gyr x", max_gyr_x, min_gyr_x)
+        print("gyr y", max_gyr_y, min_gyr_y)
+        print("gyr z", max_gyr_z, min_gyr_z)
+        print("acc x", max_acc_x, min_acc_x)
+        print("acc y", max_acc_y, min_acc_y)
+        print("acc z", max_acc_z, min_acc_z)
         times_path = osp.join(result_dir, 'times.txt')
 
         w = proto.camera_meta.resolution.width
