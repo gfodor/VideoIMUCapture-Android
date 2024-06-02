@@ -74,6 +74,8 @@ def convert_to_bag(proto, video_path, result_path, subsample=1, compress_img=Fal
         finally:
             cap.release()
 
+        c = 0
+
         # Now IMU
         for imu_frame in proto.imu:
             if not raw_imu:
@@ -83,6 +85,10 @@ def convert_to_bag(proto, video_path, result_path, subsample=1, compress_img=Fal
                 gyro_drift = accel_bias = np.zeros(3)
             rosimu, timestamp = imu_to_rosimu(imu_frame.time_ns, imu_frame.gyro, gyro_drift, imu_frame.accel, accel_bias)
             bag.write("/imu0", rosimu, timestamp)
+
+            c += 1
+
+        print("wrote ", c, " IMU samples")
 
     finally:
         bag.close()
