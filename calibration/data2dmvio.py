@@ -5,6 +5,7 @@ from recording_pb2 import VideoCaptureData
 import os
 import cv2
 import sys
+import math
 from data2rosbag import _makedir, adjust_calibration
 from interpolate_imu_file import interpolate_imu_file
 import numpy as np
@@ -17,6 +18,7 @@ if __name__ == "__main__":
     parser.add_argument('--target-fps', type=float, help='Target FPS for the output', default = 20.0)
     parser.add_argument('--skip-iso-normalize', action='store_true', help='Normalize exposure time by ISO', default = False)
     parser.add_argument('--iso-factor', type=int, help='Normalize exposure time by ISO value', default = 400)
+    parser.add_argument('--imu-ahead-ms', type=float, help='Normalize exposure time by ISO value', default = 0)
 
     args = parser.parse_args()
 
@@ -89,6 +91,8 @@ if __name__ == "__main__":
         h = proto.camera_meta.resolution.height
 
         last_frame_time = 0
+        imu_ahead_ns = math.floor(args.imu_ahead_ms * 1000000)
+        print("imu ahead ns", imu_ahead_ns)
 
         with open(times_path, 'w') as f:
             for frame_data in proto.video_meta:
@@ -96,7 +100,8 @@ if __name__ == "__main__":
                     continue
 
                 if frame_data.time_ns > max_imu_ns:
-                    raise ValueError("Frame time exceeds IMU time")
+                    print("frame time exceeds")
+                    continue
 
                 if last_frame_time != 0 and frame_data.time_ns - last_frame_time < 1e9 * frame_duration:
                     continue
@@ -110,8 +115,7 @@ if __name__ == "__main__":
                     iso_factor = frame_data.iso / args.iso_factor # Incorporate the iso into the exposure time
 
                 #print("Frame time: {}s, Exposure time: {}ms, ISO: {}, ISO factor: {} New exposures: {}".format(frame_data.time_ns/1e9, exposure_time_ms, frame_data.iso, iso_factor, exposure_time_ms * iso_factor))
-                #f.write("{} {} {}\n".format(frame_data.time_ns, frame_data.time_ns/ 1e9, exposure_time_ms * iso_factor * 0.25))
-                f.write("{} {} {}\n".format(frame_data.time_ns, frame_data.time_ns/ 1e9, exposure_time_ms * iso_factor))
+                f.write("{} {} {}\n".format(frame_data.time_ns + imu_ahead_ns, frame_data.time_ns/ 1e9, exposure_time_ms * iso_factor))
 
                 yuv_plane = frame_data.yuv_plane
 
@@ -126,4 +130,4 @@ if __name__ == "__main__":
 
         interpolate_imu_file(imu_raw_path, times_path, osp.join(result_dir, 'imu.txt'))
 
-        os.remove(imu_raw_path)
+        #os.remove(imu_raw_path)
