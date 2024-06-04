@@ -190,21 +190,37 @@ public class IMUManager extends SensorEventCallback {
                         .setAccelAccuracyValue(linear_acc)
                         .setGyroAccuracyValue(angular_acc);
 
-        for (int i = 0 ; i < 3 ; i++) {
-            imuBuilder.addGyro(packet.gyro_values[i]);
-            imuBuilder.addAccel(packet.acc_values[i]);
-        }
+        imuBuilder.addGyro(packet.gyro_values[0]);
+        imuBuilder.addAccel(packet.acc_values[0]);
+        imuBuilder.addGyro(packet.gyro_values[1]);
+        imuBuilder.addAccel(packet.acc_values[1]);
+        imuBuilder.addGyro(packet.gyro_values[2]);
+        imuBuilder.addAccel(packet.acc_values[2]);
 
         if (ACC_TYPE == Sensor.TYPE_ACCELEROMETER_UNCALIBRATED) {
+            imuBuilder.addAccelBias(packet.acc_values[3]);
+            imuBuilder.addAccelBias(packet.acc_values[4]);
+            imuBuilder.addAccelBias(packet.acc_values[5]);
+        }
+
+        if (ACC_TYPE == Sensor.TYPE_ACCELEROMETER) {
             for (int i = 3 ; i < 6 ; i++) {
-                imuBuilder.addAccelBias(packet.acc_values[i]);
+                imuBuilder.addAccelBias(0);
             }
         }
+
         if (GYRO_TYPE == Sensor.TYPE_GYROSCOPE_UNCALIBRATED) {
+            imuBuilder.addGyroDrift(packet.gyro_values[3]);
+            imuBuilder.addGyroDrift(packet.gyro_values[4]);
+            imuBuilder.addGyroDrift(packet.gyro_values[5]);
+        }
+
+        if (ACC_TYPE == Sensor.TYPE_GYROSCOPE) {
             for (int i = 3 ; i < 6 ; i++) {
-                imuBuilder.addGyroDrift(packet.gyro_values[i]);
+                imuBuilder.addGyroDrift(0);
             }
         }
+
         mRecordingWriter.queueData(imuBuilder.build());
     }
 
@@ -241,13 +257,15 @@ public class IMUManager extends SensorEventCallback {
 
     @Override
     public final void onSensorChanged(SensorEvent event) {
+        if (event.sensor.getType() == ACC_TYPE) {
+            updateSensorRate(event);
+        }
+
         if (!mRecordingInertialData) return;
 
         if (event.sensor.getType() == ACC_TYPE) {
             SensorPacket sp = new SensorPacket(event.timestamp, event.values);
             mAccelData.add(sp);
-
-            updateSensorRate(event);
         } else if (event.sensor.getType() == GYRO_TYPE) {
             SensorPacket sp = new SensorPacket(event.timestamp, event.values);
             mGyroData.add(sp);
