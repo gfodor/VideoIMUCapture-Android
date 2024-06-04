@@ -330,14 +330,15 @@ public class Camera2Proxy {
                     }
 
                     ByteBuffer yuvOutData = null;
+                    Image yuv = null;
 
                     if (mPreviewReader != null) {
-                        Image yuv = mPreviewReader.acquireLatestImage();
+                        yuv = mPreviewReader.acquireLatestImage();
 
                         if (yuv != null) {
                             Image.Plane yuvPlane = yuv.getPlanes()[0];
                             ByteBuffer yuvInData = yuvPlane.getBuffer();
-                            int pixelStride = yuvPlane.getPixelStride();
+                            /*int pixelStride = yuvPlane.getPixelStride();
                             if (pixelStride != 1) {
                                 throw new RuntimeException("Unexpected pixel stride: " + pixelStride);
                             }
@@ -357,9 +358,10 @@ public class Camera2Proxy {
                                 yuvInData.position(offset);
                                 yuvInData.get(tmp, 0, width);
                                 yuvOutData.put(tmp);
-                            }
-
-                            yuv.close();
+                            }*/
+                            /*int height = yuv.getHeight();
+                              int width = yuv.getWidth();*/
+                            yuvOutData  = yuvInData;
                         }
                     }
 
@@ -459,6 +461,10 @@ public class Camera2Proxy {
                     }
                     ((CameraCaptureActivity) mActivity).getmCameraCaptureFragment()
                             .updateCaptureResultPanel(focal_length_pix, exposureTimeNs, iso);
+
+                    if (yuv != null) {
+                        yuv.close();
+                    }
                 }
 
                 @Override

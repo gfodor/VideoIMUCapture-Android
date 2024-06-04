@@ -146,9 +146,15 @@ if __name__ == "__main__":
                 f.write("{} {} {}\n".format(frame_data.time_ns + imu_ahead_ns, frame_data.time_ns/ 1e9, exposure_time_ms * iso_factor))
 
                 yuv_plane = frame_data.yuv_plane
+                row_stride = 1024
+
+                # Loop over the yuv_plane bytes and encode a new byte array that has the proper row stride removed
+                de_stride_yuv = bytearray()
+                for i in range(0, w):
+                    de_stride_yuv += yuv_plane[i*row_stride:i*row_stride+h]
 
                 # YUV plane is a series of bytes YUV 420 888, write these values out as is to a greyscale file
-                yuv = np.frombuffer(yuv_plane, dtype=np.uint8)
+                yuv = np.frombuffer(de_stride_yuv, dtype=np.uint8)
                 yuv = yuv.reshape(w, h)
                 yuv = np.transpose(yuv)
                 yuv = np.fliplr(yuv)
