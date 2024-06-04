@@ -121,12 +121,30 @@ def imu_to_rosimu(timestamp_nsecs, omega, omega_drift, alpha, alpha_bias):
 
     rosimu = Imu()
     rosimu.header.stamp = timestamp
-    rosimu.angular_velocity.x = omega[0] - omega_drift[0]
-    rosimu.angular_velocity.y = omega[1] - omega_drift[1]
-    rosimu.angular_velocity.z = omega[2] - omega_drift[2]
-    rosimu.linear_acceleration.x = alpha[0] - alpha_bias[0]
-    rosimu.linear_acceleration.y = alpha[1] - alpha_bias[1]
-    rosimu.linear_acceleration.z = alpha[2] - alpha_bias[2]
+    gyro_x = omega[0]# - omega_drift[0]
+    gyro_y = omega[1]# - omega_drift[1]
+    gyro_z = omega[2]# - omega_drift[2]
+    accel_x = alpha[0]# - alpha_bias[0]
+    accel_y = alpha[1]# - alpha_bias[1]
+    accel_z = alpha[2]# - alpha_bias[2]
+
+    #gyro_x = 1.0925741 * gyro_x
+    #gyro_y = -0.02255 * gyro_x + 1.0319 * gyro_y + 0 * gyro_z
+    #gyro_z = 0.02092 * gyro_x - 0.00527 * gyro_z + 1.01599 * gyro_z
+    #gyro_x = 1.04943909 * gyro_x
+    #gyro_y = 0.00043756 * gyro_x + 1.033398047 * gyro_y + 0 * gyro_z
+    #gyro_z = 0.01105462 * gyro_x - 0.00202769 * gyro_z + 0.99306513 * gyro_z
+
+    #accel_x = accel_x + 0.03
+    #accel_y = accel_y - 0.22
+    #accel_z = accel_z - 0.15
+
+    rosimu.angular_velocity.x = gyro_x
+    rosimu.angular_velocity.y = gyro_y
+    rosimu.angular_velocity.z = gyro_z
+    rosimu.linear_acceleration.x = accel_x
+    rosimu.linear_acceleration.y = accel_y
+    rosimu.linear_acceleration.z = accel_z
 
     return rosimu, timestamp
 
