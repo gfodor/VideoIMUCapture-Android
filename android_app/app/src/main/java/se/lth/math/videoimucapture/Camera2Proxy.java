@@ -205,7 +205,7 @@ public class Camera2Proxy {
             mPreviewRequestBuilder.set(
                     CaptureRequest.CONTROL_MODE, CameraMetadata.CONTROL_MODE_AUTO);
 
-            Range<Integer> fpsRange = new Range<>(60,60);
+            Range<Integer> fpsRange = new Range<>(30,30);
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_TARGET_FPS_RANGE,fpsRange);
 
             mPreviewRequestBuilder.set(
@@ -316,11 +316,15 @@ public class Camera2Proxy {
                 public void onCaptureCompleted(@NonNull CameraCaptureSession session,
                                                @NonNull CaptureRequest request,
                                                TotalCaptureResult result) {
-
-
-                    if (mCameraSettingsManager.focusOnTouch()) {
-                        mFocusTriggered |= (result.get(CaptureResult.CONTROL_AF_STATE) == CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN);
+                    try {
+                        if (mCameraSettingsManager.focusOnTouch()) {
+                            mFocusTriggered |= (result.get(CaptureResult.CONTROL_AF_STATE) == CaptureResult.CONTROL_AF_STATE_ACTIVE_SCAN);
+                        }
+                    } catch (Exception e) {
+                        // NOTE sometimes this crashes out, not sure why
+                        e.printStackTrace();
                     }
+
                     if (mCameraSettingsManager.exposureOnTouch()) {
                         mExposureTriggered |= (result.get(CaptureResult.CONTROL_AE_STATE) == CaptureResult.CONTROL_AE_STATE_SEARCHING);
                     }

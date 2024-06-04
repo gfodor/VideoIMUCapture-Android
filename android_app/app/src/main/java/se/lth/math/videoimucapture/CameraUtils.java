@@ -83,29 +83,34 @@ public class CameraUtils {
 
     public static String getRearCameraId(CameraManager manager) {
         // HACK for now with redmi to get ultrawide
-        return "2";
 
-        // try {
-        //     String[] cameraIdList = manager.getCameraIdList();
 
-        //     // Loop through our camera list
-        //     for (String cameraId : cameraIdList) {
-        //         // Get the camera
-        //         CameraCharacteristics characteristics =
-        //                 manager.getCameraCharacteristics(cameraId);
-        //         try {
-        //             // Check if the camera is facing the back
-        //             if (characteristics.get(CameraCharacteristics.LENS_FACING) ==
-        //                     CameraMetadata.LENS_FACING_BACK) {
-        //                 return cameraId;
-        //             }
-        //         } catch (NullPointerException e) {
-        //             e.printStackTrace();
-        //         }
-        //     }
-        // } catch (CameraAccessException e) {
-        //     e.printStackTrace();
-        // }
+         /*try {
+           String[] cameraIdList = manager.getCameraIdList();
+
+           // Loop through our camera list
+           for (String cameraId : cameraIdList) {
+               // Get the camera
+               CameraCharacteristics characteristics =
+                       manager.getCameraCharacteristics(cameraId);
+               Log.i("TEST", "Camera ID: " + cameraId);
+               try {
+                   // Check if the camera is facing the back
+                   if (characteristics.get(CameraCharacteristics.LENS_FACING) ==
+                           CameraMetadata.LENS_FACING_BACK) {
+                       return cameraId;
+                   }
+               } catch (NullPointerException e) {
+                   e.printStackTrace();
+               }
+
+           }
+
+         } catch (CameraAccessException e) {
+           e.printStackTrace();
+         }*/
+
+         return "2";
     }
 
     public static int calcBitRate(int width, int height, int frame_rate) {
