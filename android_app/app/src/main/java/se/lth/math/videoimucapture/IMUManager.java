@@ -31,7 +31,7 @@ public class IMUManager extends SensorEventCallback {
     private long mPrevTimestamp = 0; // ns
     private float[] mSensorPlacement = null;
 
-    private int mSamplingPeriod = 10000;
+    private int mSamplingPeriod = 5000;
 
     private static class SensorPacket {
         long timestamp;
