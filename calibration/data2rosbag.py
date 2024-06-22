@@ -23,56 +23,58 @@ class VideoFinishedException(Exception):
 bridge = CvBridge()
 NSECS_IN_SEC=int(1e9)
 
-def convert_to_bag(proto, video_path, result_path, subsample=1, compress_img=False, compress_bag=False, resize = [], raw_imu =False):
+def convert_to_bag(proto, video_path, result_path, subsample=1, compress_img=False, compress_bag=False, resize = [], raw_imu = False, imu_only = False):
     #Init rosbag
     # bz2 is better compression but lz4 is 3 times faster
     resolution = None
     img_topic = "/cam0/image_raw/compressed" if compress_img else "/cam0/image_raw"
+
     try:
         bag = rosbag.Bag(result_path, 'w', compression='lz4' if compress_bag else 'none')
 
-        # Open video stream
-        try:
-            cap = cv2.VideoCapture(video_path)
+        if not imu_only:
+          # Open video stream
+          try:
+              cap = cv2.VideoCapture(video_path)
 
-            # Generate images from video and frame data
-            for frame_data in proto.video_meta:
+              # Generate images from video and frame data
+              for frame_data in proto.video_meta:
 
-                # Read video frames until we find correct number
-                while  True:
-                    video_frame_idx = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
-                    ret, frame = cap.read()
-                    if not ret:
-                        raise VideoFinishedException()
+                  # Read video frames until we find correct number
+                  while  True:
+                      video_frame_idx = int(cap.get(cv2.CAP_PROP_POS_FRAMES))
+                      ret, frame = cap.read()
+                      if not ret:
+                          raise VideoFinishedException()
 
-                    if video_frame_idx==frame_data.frame_number and (video_frame_idx % subsample) == 0:
-                        # Correct frame and subsample index
-                        rosimg, timestamp, resolution = img_to_rosimg(frame,
-                                                                      frame_data.time_ns,
-                                                                      compress=compress_img,
-                                                                      resize = resize)
-                        bag.write(img_topic, rosimg, timestamp)
+                      if video_frame_idx==frame_data.frame_number and (video_frame_idx % subsample) == 0:
+                          # Correct frame and subsample index
+                          rosimg, timestamp, resolution = img_to_rosimg(frame,
+                                                                        frame_data.time_ns,
+                                                                        compress=compress_img,
+                                                                        resize = resize)
+                          bag.write(img_topic, rosimg, timestamp)
 
-                        # Go to next data frame
-                        break
+                          # Go to next data frame
+                          break
 
-                    elif video_frame_idx==frame_data.frame_number:
-                        #Skipping subsample
-                        break
+                      elif video_frame_idx==frame_data.frame_number:
+                          #Skipping subsample
+                          break
 
-                    elif video_frame_idx < frame_data.frame_number:
-                        print('skipping frame {}, missing data'.format(video_frame_idx))
+                      elif video_frame_idx < frame_data.frame_number:
+                          print('skipping frame {}, missing data'.format(video_frame_idx))
 
-                    else:
-                        raise NotImplementedError('Missing video frame idx is not supported and not expected. \
-                                                  Video frame idx {} > frame_data.frame_number {}'.format(video_frame_idx, frame_data.frame_number))
+                      else:
+                          raise NotImplementedError('Missing video frame idx is not supported and not expected. \
+                                                    Video frame idx {} > frame_data.frame_number {}'.format(video_frame_idx, frame_data.frame_number))
 
-        except VideoFinishedException:
-            # Nothing to worry about, video stream ended.
-            pass
+          except VideoFinishedException:
+              # Nothing to worry about, video stream ended.
+              pass
 
-        finally:
-            cap.release()
+          finally:
+              cap.release()
 
         c = 0
 
@@ -184,6 +186,7 @@ if __name__ == "__main__":
     parser.add_argument('--raw-image', action='store_true', help='Store raw images in rosbag')
     parser.add_argument('--resize', type=int, nargs = 2, default = [], help='Resize image to this <width height>')
     parser.add_argument('--raw-imu', action='store_true', help='Do not compensate for bias')
+    parser.add_argument('--imu-only', action='store_true', help='Only store imu data')
     parser.add_argument('--calibration', type=str, help='YAML file with kalibr camera and IMU calibration to copy, will also adjust for difference in resolution.', default = None)
 
     args = parser.parse_args()
@@ -209,7 +212,8 @@ if __name__ == "__main__":
                                     subsample = args.subsample,
                                     compress_img = not args.raw_image,
                                     resize = args.resize,
-                                    raw_imu = args.raw_imu)
+                                    raw_imu = args.raw_imu,
+                                    imu_only = args.imu_only)
 
         if args.calibration:
             out_path = osp.join(result_dir, 'calibration.yaml')
