@@ -84,8 +84,7 @@ public class CameraUtils {
     public static String getRearCameraId(CameraManager manager) {
         // HACK for now with redmi to get ultrawide
 
-
-         /*try {
+         try {
            String[] cameraIdList = manager.getCameraIdList();
 
            // Loop through our camera list
@@ -108,9 +107,9 @@ public class CameraUtils {
 
          } catch (CameraAccessException e) {
            e.printStackTrace();
-         }*/
+         }
 
-         return "2";
+         return "0";
     }
 
     public static int calcBitRate(int width, int height, int frame_rate) {

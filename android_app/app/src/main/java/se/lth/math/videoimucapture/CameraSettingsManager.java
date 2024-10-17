@@ -600,7 +600,8 @@ class CameraSettingExposureMode extends CameraSetting {
     private final String mISOPrefKey = "iso";
     private final String mExposurePrefKey = "exposure";
 
-    private float mCalibrationExposureMs = 1.0f/3200.0f;
+    private float mCalibrationExposureMs = 0.03f;
+    private int mCalibrationExposureFrameCount = 0;
 
     public CameraSettingExposureMode(CameraCharacteristics cameraCharacteristics) {
         //Check available modes
@@ -765,7 +766,15 @@ class CameraSettingExposureMode extends CameraSetting {
         }
 
         if (getMode() == Mode.CALIBRATION) {
-            mCalibrationExposureMs *= 1.015f;
+            if (mCalibrationExposureFrameCount == 50) {
+                mCalibrationExposureFrameCount = 0;
+
+                if (mCalibrationExposureMs < 20000.0) {
+                    mCalibrationExposureMs *= 1.05f;
+                }
+            } else {
+                mCalibrationExposureFrameCount++;
+            }
         }
     }
 }

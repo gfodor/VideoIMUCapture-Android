@@ -214,6 +214,8 @@ public class Camera2Proxy {
                     CaptureRequest.SHADING_MODE, CameraMetadata.SHADING_MODE_OFF);
             mPreviewRequestBuilder.set(
                     CaptureRequest.COLOR_CORRECTION_ABERRATION_MODE, CameraMetadata.COLOR_CORRECTION_ABERRATION_MODE_OFF);
+            mPreviewRequestBuilder.set(
+                    CaptureRequest.DISTORTION_CORRECTION_MODE, CameraMetadata.DISTORTION_CORRECTION_MODE_OFF);
 
             mCameraSettingsManager.updateRequestBuilder(mPreviewRequestBuilder);
 
@@ -337,31 +339,11 @@ public class Camera2Proxy {
 
                         if (yuv != null) {
                             Image.Plane yuvPlane = yuv.getPlanes()[0];
-                            ByteBuffer yuvInData = yuvPlane.getBuffer();
-                            /*int pixelStride = yuvPlane.getPixelStride();
-                            if (pixelStride != 1) {
-                                throw new RuntimeException("Unexpected pixel stride: " + pixelStride);
-                            }
+                            yuvOutData = yuvPlane.getBuffer();
 
+                            int pixelStride = yuvPlane.getPixelStride();
                             int rowStride = yuvPlane.getRowStride();
-                            int height = yuv.getHeight();
-                            int width = yuv.getWidth();
-
-                            yuvOutData = ByteBuffer.allocate(width * height);
-                            byte[] tmp = new byte[width];
-
-                            // Copy from one byte buffer into the other, accounting for row and pixel stride
-                            for (int i = 0; i < height; ++i) {
-                                int offset = i * rowStride;
-
-                                // Assumes pixel stride is 1, for performance
-                                yuvInData.position(offset);
-                                yuvInData.get(tmp, 0, width);
-                                yuvOutData.put(tmp);
-                            }*/
-                            /*int height = yuv.getHeight();
-                              int width = yuv.getWidth();*/
-                            yuvOutData  = yuvInData;
+                            Log.i(TAG, "Strides: " + pixelStride + " " + rowStride);
                         }
                     }
 
@@ -460,7 +442,7 @@ public class Camera2Proxy {
                         writeCaptureData(result, focal_length_pix, yuvOutData);
                     }
                     ((CameraCaptureActivity) mActivity).getmCameraCaptureFragment()
-                            .updateCaptureResultPanel(focal_length_pix, exposureTimeNs, iso);
+                            .updateCaptureResultPanel(fd, exposureTimeNs, iso);
 
                     if (yuv != null) {
                         yuv.close();
