@@ -769,7 +769,7 @@ class CameraSettingExposureMode extends CameraSetting {
             if (mCalibrationExposureFrameCount == 50) {
                 mCalibrationExposureFrameCount = 0;
 
-                if (mCalibrationExposureMs < 20000.0) {
+                if (mCalibrationExposureMs < 850.0) {
                     mCalibrationExposureMs *= 1.05f;
                 }
             } else {

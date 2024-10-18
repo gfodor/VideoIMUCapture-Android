@@ -40,6 +40,7 @@
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:text="focal length : exposure time"
+        android:textColor="@color/desired_color"
         android:textAppearance="@style/TextAppearance.MyApp.Overlay"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/cameraParams_text" />
