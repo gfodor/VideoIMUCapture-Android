@@ -144,20 +144,19 @@ if __name__ == "__main__":
 
                 #print("Frame time: {}s, Exposure time: {}ms, ISO: {}, ISO factor: {} New exposures: {}".format(frame_data.time_ns/1e9, exposure_time_ms, frame_data.iso, iso_factor, exposure_time_ms * iso_factor))
                 f.write("{} {} {}\n".format(frame_data.time_ns + imu_ahead_ns, frame_data.time_ns/ 1e9, exposure_time_ms * iso_factor))
+                #f.write("{} {} {}\n".format(frame_data.time_ns + imu_ahead_ns, frame_data.time_ns/ 1e9, exposure_time_ms))
 
                 yuv_plane = frame_data.yuv_plane
-                row_stride = 1024
-
-                # Loop over the yuv_plane bytes and encode a new byte array that has the proper row stride removed
-                de_stride_yuv = bytearray()
-                for i in range(0, w):
-                    de_stride_yuv += yuv_plane[i*row_stride:i*row_stride+h]
 
                 # YUV plane is a series of bytes YUV 420 888, write these values out as is to a greyscale file
-                yuv = np.frombuffer(de_stride_yuv, dtype=np.uint8)
-                yuv = yuv.reshape(w, h)
-                yuv = np.transpose(yuv)
-                yuv = np.fliplr(yuv)
+                row_stride = 384
+                #row_stride = 352
+                yuv = np.frombuffer(yuv_plane, dtype=np.uint8)
+                yuv = np.pad(yuv, (0, 64), 'constant')
+                yuv = yuv.reshape(w, row_stride)[:, :320]
+                #yuv = yuv.reshape(w, h)
+                #yuv = np.fliplr(yuv)
+                #yuv = np.transpose(yuv)
 
                 # Write out the Y plane
                 cv2.imwrite(osp.join(image_dir,'{:06d}.png'.format(frame_data.time_ns)), yuv[:h,:], [cv2.IMWRITE_PNG_COMPRESSION, 0])
